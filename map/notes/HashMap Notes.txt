@@ -1,0 +1,333 @@
+Map is a separate Interface then Collection.
+	- Each entry in Map consists Key & Value.
+	- No 2 entries can have same the same key. 1 value per key can be stored.
+	- key can have null but only 1 entry is allowed with null as key, coz key will alway unique. even if we add duplicate key then previous item will be replaced with new value.
+	- keys in HashMap are immutable, means once created can not be modified.
+	- As HashMap does not support indexing hence Not synchronized, means not thread safe, it requires external synchronization if used in multi-threaded context.
+	- Performance: offers O(1) for basic operations like put(), containsX() & get().
+				(if i will search something in ArrayList or LinkedList is linear, O(n) time complexity)
+	
+Map (Interface)
+----------------
+All the below classes implements the Map interface internally.(HashTable is legacy)
+	|
+	| - LinkedHashMap
+	| - TreeMap
+	| - HashMap (no order maintained)
+
+HashMap
+==========================================
+
+HashMap hm = new HashMap(); -> 🚫 this is wrong. we have to define the <K, V> types.
+
+HashMap<Integer, String> hm = new HashMap<>(); ✅
+
+	1. insert values in to HashMap:
+	------------------------------
+	
+	hm.put(1, "Purna Sahu");
+	hm.put(2, "Brahma Sahu");
+	hm.put(21, "Sahu..");
+	hm.put(21, "Sahu");   -> key already exists, so it wont throw error, imfact it will replace the old item with new item.
+	
+	SysOut(hm); -> it overrides the toString() internally hence can be print the object values.
+	
+	
+	2. fetch a value from HashMap using key:
+	-----------------------------------------
+	get() -> return the value, hence we have to catch that value with that particular type.
+			It will return NULL, if no such key exist, hence for NullSaftey, 1st check whether key exists or not?
+	
+		String name = hm.get(2);
+	
+	
+	3. check existence of key & value:
+	-----------------------------------
+	containsKey(key) -> will return boolean value.
+	containsValue(value) -> returns boolean value.
+	
+	This operation takes O(n) time complexity.
+	
+		Sysout(hm.containsKey(3)); -> false
+		Sysout(hm.containsValue("Purna Sahu")); -> true
+	
+	
+	4. Iterate Map:
+	---------------------------------
+	There are 2 ways we can do this;
+		
+		a. The Set will contain only unique elements, so the keys will also unique only, so no data loss.
+		keySet() -> will return Set of key elements.
+		Then we can print list of all values in HashMap but it will be unordered(neither FIFO nor LIFO)
+		
+			Set<Integer> keys = hm.keySet();
+			for(int i : keys)
+				Sysout(hm.get(i));
+		
+		b. entrySet() -> returns Set<Map.Entry<Integer,String>>
+			It means, a set of lots of Entries & every Entry has key & Value and from there we will fetch 1 by 1 entry.
+				
+				Set<Map.Entry<Integer,String>> entries = hm.entrySet();
+				for(Entry<Integer,String> entry : entries){
+					
+					//from each Entry, we will fetch key-value
+					Sysout(entry.getKey()+" : "+entry.getValue());
+				}
+				
+				//Change/update the values in to uppercase directly in the HashMap, coz we are refering to the same HashMap location
+				for(Map<Integer,String> entry : entries){
+					entry.setValue(entry.getValue().toUpperCase());
+				}
+				Sysout(hm);
+				
+				
+	5. delete an entry in HashMap:
+	-----------------------------------
+	remove() -> It has 2 overloaded method (with only key as parameter, another with both key & value as parameter). It always returns a boolean value. If we passed an entry where key not exist/wrong then it wont throw any error, it will simply return false for that operation, it means nothing happened.
+	
+		hm.remove(21); -> will return the value which removed
+		
+		boolean status = hm.remove(2, "Brahma");
+		Sysout(status);-> retun false, coz eventhough the key is correct still, the value is wrong & comibinely that entry not exists.
+	
+	
+	6. change values in HashMap techniques:
+	-----------------------------------------
+	there are multiple ways to write (insert/modify data) into a HashMap in Java. except put(), putAll(), keySet() allother methods introduced in JDK8.
+	
+		a. put()
+			- Introduced in JDK1.2.
+			- We can do both insertion(key-value) & modification of value.
+			- main purpose is to Inserts key–value pair, but we can pass the (key & new value) Overwrites value if key already exists.
+		
+		b. If intention is to only insert in HashMap strictly then follow this;
+			hm.putIfAbsent(2, "Boot");
+			
+			- Inserts only if key is not present. call this while we insert changes for the 1st time in HashMap.
+			- Avoids overwriting existing value
+			
+		c. compute()
+			map.compute(3, (k, v) -> "Microservices");
+				Computes value dynamically
+				Useful when value depends on key/value
+				compute() can insert, update, or delete
+				Returning null from compute() removes from Map.
+				compute() always executes lambda
+				Returning null from compute() → deletes entry
+				compute() is atomic in ConcurrentHashMap
+				
+				- Update wxisting Values
+					Map<String, Integer> map = new HashMap<>();
+					map.put("apple", 10);
+
+					map.compute("apple", (k, v) -> v + 5);
+					// apple → 15
+				key exists & value is not null, Hence value updated.
+				
+				- Insert new key
+					map.compute("banana", (k, v) -> 20);
+					// banana → 20
+				here, the key not exists so we added & more important the value(v) is NULL & we have updated it to 20.
+				
+				- Initialize if missing (manual version of computeIfAbsent)
+					map.compute("orange", (k, v) -> (v == null) ? 1 : v + 1);
+				works for both present & absent keys.
+				
+				- Returning null → ENTRY DELETED
+					map.put("mango", 5);
+
+					map.compute("mango", (k, v) -> null);
+					// mango entry REMOVED
+				compute() returns the value of the entry in HashMap, If compute() returns null, the mapping is removed from the map (if present).
+				
+				- Conditional delete
+					map.compute("apple", (k, v) -> (v > 10) ? v : null);
+				here, we checking the condition, if its true then update the value, if not we setting the value as NULL(it means we are deleteing that entry, WKT if compute() returns NULL then that entry will get deleted automatically). The advantage is we don't need to call the; ketSet() -> then iterate the map with the condition -> then remove those entries with remove().
+
+				
+		d. computeIfAbsent() ⭐ (Very important)
+			map.computeIfAbsent(4, k -> "React");
+				Creates value only if key is missing
+				Widely used for caching & grouping
+				it can not be used for delete an entry.
+				usually, we need this for caching, initialization & grouping of data.
+				Use computeIfAbsent() whenever you want to initialize a value only once and reuse it safely.
+				
+			Interview One-Liners
+				computeIfAbsent() is lazy initialization
+				Prevents duplicate object creation
+				Atomic in ConcurrentHashMap
+				Best for grouping, caching, bucketing
+			why its Important;
+				Replaces 10+ lines of old code
+				Solves thread-safety issues
+				Used heavily in Streams, Collectors, caches
+				
+			✔ When is function executed?
+				Only if key absent OR value is null
+				map.put("x", "present");
+				map.computeIfAbsent("x", k -> "new"); // lambda NOT called, coz key already exist
+				
+				map.computeIfAbsent("x", k -> null);
+				✔ No entry added, ✔ No exception, ✔ Map unchanged
+
+			- In traditional way, we may need to lookup the map multiple times, not thread-safe & boilerplate code.
+				
+				Map<String, List<String>> map = new HashMap<>();
+
+				if (!map.containsKey("java")) {
+					map.put("java", new ArrayList<>());
+				}
+				map.get("java").add("streams");
+				
+			same thing can be written efficiently;
+				map.computeIfAbsent("java", k -> new ArrayList<>())
+					.add("streams");
+				
+				we are checking if key exist -> no, then create a key & value will be empty ArrayList(if we leave like this then the entry wont get deleted, considering the value = null, here value is java -> [], which is not null) once the compute() executes then it returns the value which is List reference on which we will add data. WKT compute() returns the value, here value is ArrayList reference on which we directly call the add(). but assume 2nd time we called the compute() again with key=java -> this time lambda expression won't execute but it will simply return the value of that key, which is arrayList reference on which we calling add() again, so we grouping simillar key types.
+			
+			
+			- Grouping / Bucketing (VERY COMMON interview question)
+			
+				Map<Character, List<String>> map = new HashMap<>();
+
+				for (String word : List.of("apple", "ant", "ball", "bat")) {
+					map.computeIfAbsent(word.charAt(0), k -> new ArrayList<>())
+					   .add(word);
+				}
+				
+				output:
+					a → [apple, ant]
+					b → [ball, bat]
+				we are kind of creating a dictionary by grouping words by looking at their 1st character.
+					a ──► 📦 List object ──► ["apple", "ant"]
+					b ──► 📦 List object ──► ["ball", "bat"]
+
+				
+			computeIfAbsent() returns the value associated with the key — whether it was just created OR already existed. On 1st iteration, it checked the key 'a' not exist, so added & called lamda for adding a value & after that it returned the value on which we added the word. simillarly when 2nd time iterated key='a' already exist, hence lambda expression won't executed, instead it will simply return the valu of that key, which is nothing but the obj reference on which we added another word.
+
+			The interviewer may try to trap by saying this;
+				map.put(word.charAt(0), new ArrayList<>());
+				map.get(word.charAt(0)).add(word);
+			❌ Overwrites the list every time
+			❌ Loses previous values
+
+
+			- In real world, we can design own caching;
+			Where, we can design a class specifically by implementing ApplicationRunner/CommandLineRunner, where we can fetch properties of DB, then connect to DB & fill the In-Memory Cache, before our application actually starts taking requests from API.
+				Map<String, String> cache = new HashMap<>();
+				String value = cache.computeIfAbsent("user123", k -> fetchFromDB(k));
+			✔ DB hit happens only once
+			✔ Lazy loading
+			✔ Clean cache logic
+
+			
+		e. computeIfPresent()
+			map.computeIfPresent(1, (k, v) -> v + " 17");
+				
+				Updates value only if key exists.
+				Value must be non-null
+				Returning null → entry removed
+				Lambda not executed if key absent
+				Atomic in ConcurrentHashMap
+				Use computeIfPresent() for safe updates
+				Best for conditional modification
+				Avoids accidental key creation
+				
+			computeIfPresent() is used when you want to update or remove a value only if the key already exists.
+			It’s less used than computeIfAbsent(), but very important in real systems (state updates, cleanup, conditional delete).
+			
+			example-1: Session expiry update (Spring / Web apps)
+				Map<String, Long> sessionExpiry = new HashMap<>();
+				sessionExpiry.put("user123", 1700000000000L);
+
+				// Extend session ONLY if session exists
+				sessionExpiry.computeIfPresent("user123", (k, v) -> v + 30_000);
+				
+				✔ Prevents accidental creation
+				✔ Safe update
+			
+			example-2: Conditional delete (cleanup job)
+				Map<String, Integer> retryCount = new HashMap<>();
+				retryCount.put("apiA", 5);
+
+				// Remove entry if retries exceeded
+				retryCount.computeIfPresent("apiA", (k, v) -> v > 3 ? null : v);
+				
+				✔ Deletes without calling remove() -> WKT compute() remove entry if its returns null.
+				✔ Clean & expressive
+			
+			example-3: Mutable object update (List / Map values)
+				Map<String, List<String>> errors = new HashMap<>();
+				errors.put("serviceA", new ArrayList<>(List.of("timeout")));
+
+				errors.computeIfPresent("serviceA", (k, v) -> {
+					v.add("db-down");
+					return v;
+				});
+				✔ Modify existing object
+				✔ Return same reference
+			
+		f. merge(): merge() ⭐ is one of the most useful Java-8 Map methods, especially for counting, aggregation, and combining values.
+			map.merge(1, " Advanced", (oldVal, newVal) -> oldVal + newVal);
+				Combines old & new values
+				Common in frequency/count problems
+			“If key exists → combine old & new value, If key does not exist → just insert the new value”
+			
+			syntax: merge(key, value, BiFunction lambda expression)
+			
+			example-1: Classic use case: Frequency / counting (Very Important)
+				Map<String, Integer> freq = new HashMap<>();
+
+				for (String word : List.of("java", "spring", "java", "boot")) {
+					freq.merge(word, 1, Integer::sum);
+				}
+				output:
+					java   → 2
+					spring→ 1
+					boot  → 1
+					
+					when key is present then; old value= 1 & new value= 1, sum =2 becomes the value.
+					
+			In traditional ways, we would have write like this;
+				if (freq.containsKey(word)) {
+					freq.put(word, freq.get(word) + 1);
+				} else {
+					freq.put(word, 1);
+				}
+			
+			Example-2: Returning null → ENTRY REMOVED
+				map.merge("a", 5, (oldVal, newVal) -> null);
+					
+					here, we took the old value & new value but did nothing with those information, simply set the value as null, merge() returns the value as NULL, hence that entry will be deleted, without throwing any exception.
+			
+			Example-3: Merge with String values
+				Map<String, String> map = new HashMap<>();
+
+				map.merge("msg", "Hello", (oldV, newV) -> oldV + " " + newV);
+				map.merge("msg", "World", (oldV, newV) -> oldV + " " + newV);
+
+				output:
+					msg → "Hello World"
+
+		g. putAll() (Bulk write)
+			Map<Integer, String> anotherMap = Map.of(5, "AWS", 6, "Docker");
+			map.putAll(anotherMap);
+				Copies all entries from another map.
+				putAll() has no filter or condition support.
+				
+			Map<Integer, String> map1 = new HashMap<>();
+			Map<Integer, String> map2 = Map.of(1, "Java", 2, "Spring");
+
+			map1.putAll(map2);
+
+			output:
+				map1 → {1=old}
+				map1 → {1=Java, 2=Spring}
+
+		
+		Which method avoids overwriting an existing key?
+			✔ putIfAbsent()
+			✔ computeIfAbsent()
+	
+	Deep copy vs shallow copy of Map whats the difference?
